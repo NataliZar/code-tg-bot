@@ -1,0 +1,53 @@
+import logging
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from googletrans import Translator
+
+# Your Telegram bot token from BotFather
+TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+
+# Set up logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# Command handler for /start
+def start(update: Update, _: CallbackContext) -> None:
+    user = update.effective_user
+    update.message.reply_text(f'Hello, {user.mention_html()}! I am the Translator bot. '
+                              f'Use /translate <text> to translate your text.')
+
+# Command handler for /translate
+def translate(update: Update, _: CallbackContext) -> None:
+    text_to_translate = ' '.join(_.args)
+    if not text_to_translate:
+        update.message.reply_text('Please provide text to translate after the /translate command.')
+        return
+
+    translator = Translator()
+    translation = translator.translate(text_to_translate, dest='en')
+    update.message.reply_text(f'Translated text: {translation.text}')
+
+# Echo handler to handle non-command messages
+def echo(update: Update, _: CallbackContext) -> None:
+    update.message.reply_text("I'm a translator bot. Please use /translate <text> to translate your text.")
+
+def main() -> None:
+    updater = Updater(TOKEN)
+
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
+
+    # Register command handlers
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("translate", translate))
+    
+    # Register an echo handler for non-command messages
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until the user presses Ctrl-C
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
